@@ -5,11 +5,16 @@ import Loader from "./Loader";
 import Error from "./Error";
 import StartScreen from "./StartScreen";
 import Question from "./Question";
+import NextButton from "./NextButton";
+import Progress from "./Progress";
 
 const initialState = {
   questions: [],
   // loading, error, ready, active, finished
   status: "loading",
+  index: 0,
+  answer: null,
+  score: 0,
 };
 function reducer(state, action) {
   switch (action.type) {
@@ -19,14 +24,40 @@ function reducer(state, action) {
     case "dataFailed":
       return { ...state, status: "error" };
 
+    case "start":
+      return { ...state, status: "active" };
+
+    case "newAnswer":
+      // eslint-disable-next-line no-case-declarations
+      const question = state.questions[state.index];
+      return {
+        ...state,
+        answer: action.payload,
+        score:
+          question.correctOption === action.payload
+            ? state.score + question.points
+            : state.score,
+      };
+
+    case "nextQuestion":
+      return { ...state, index: state.index++, answer: null };
     default:
       throw new Error("Action Unkown");
   }
 }
 
 export default function App() {
-  const [{ questions, status }, dispatch] = useReducer(reducer, initialState);
+  const [{ questions, status, index, answer, score }, dispatch] = useReducer(
+    reducer,
+    initialState,
+  );
   const numQuestions = questions.length;
+
+  const maxPossibleScore = questions.reduce(
+    (prev, cur) => prev + cur.points,
+    0,
+  );
+
   useEffect(() => {
     async function fetchQuestions() {
       try {
@@ -48,8 +79,26 @@ export default function App() {
       <Main>
         {status === "loading" && <Loader />}
         {status === "error" && <Error />}
-        {status === "ready" && <StartScreen numQuestions={numQuestions} />}
-        {status === "active" && <Question />}
+        {status === "ready" && (
+          <StartScreen numQuestions={numQuestions} dispatch={dispatch} />
+        )}
+        {status === "active" && (
+          <>
+            <Progress
+              index={index}
+              numQuestions={numQuestions}
+              answer={answer}
+              score={score}
+              maxPossibleScore={maxPossibleScore}
+            />
+            <Question
+              question={questions[index]}
+              answer={answer}
+              dispatch={dispatch}
+            />
+            <NextButton answer={answer} dispatch={dispatch} />
+          </>
+        )}
       </Main>
     </div>
   );
