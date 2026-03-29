@@ -101,7 +101,6 @@ export default function App() {
         const res = await fetch(
           "https://raw.githubusercontent.com/tarek-khalifa-1/react-quiz/refs/heads/main/data/questions.json",
         );
-        console.log(res);
         if (!res.ok) throw new Error("failed to fetch questions");
         const data = await res.json();
         dispatch({
@@ -110,7 +109,6 @@ export default function App() {
         });
       } catch (error) {
         dispatch({ type: "dataFailed" });
-        console.error(error);
       }
     }
 
